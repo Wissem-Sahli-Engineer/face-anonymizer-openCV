@@ -5,7 +5,7 @@ from pathlib import Path
 import mediapipe as mp
 
 # Reading the image
-img_path = Path("data") / "test3.jpeg"
+img_path = Path("data") / "test2.jpeg"
 img = cv2.imread(str(img_path))
 
 # detecting faces
@@ -17,7 +17,7 @@ BaseOptions = mp.tasks.BaseOptions
 
 options = FaceDetectorOptions(
     base_options=BaseOptions(model_asset_path='blaze_face_short_range.tflite'),
-    min_detection_confidence=0.5
+    min_detection_confidence=0.8
 )
 
 with FaceDetector.create_from_options(options) as face_detection :
@@ -28,20 +28,25 @@ with FaceDetector.create_from_options(options) as face_detection :
 
     out = face_detection.detect(mp_image)
 
+    print(" ======= DETECTIONS ======== ")
     print (out.detections)
 
-    for detection in out.detections:
+    if out.detections:
 
-        bbox = detection.bounding_box
+        for detection in out.detections:
 
-        x1 , y1 , w , h = bbox.origin_x , int(bbox.origin_y * 0.8) , bbox.width , bbox.height + int(bbox.origin_y * 0.2)
+            bbox = detection.bounding_box
 
+            x1 , y1 , w , h = bbox.origin_x , int(bbox.origin_y * 0.8) , bbox.width , bbox.height + int(bbox.origin_y * 0.2)
+
+            cv2.rectangle(img , (x1, y1) , (x1+w , y1+h) , (0,255,0))
+     
+        cv2.imshow("Image", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
     
-    cv2.rectangle(img , (x1, y1) , (x1+w , y1+h) , (0,255,0))
-    cv2.imshow("Image", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-    
+    else :
+        print("\n ====> No face detected \n")
 
 
 
