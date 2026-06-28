@@ -3,6 +3,7 @@ import cv2
 from pathlib import Path
 # pyrefly: ignore [missing-import]
 import mediapipe as mp
+import os 
 
 # Reading the image
 img_path = Path("data") / "test3.jpeg"
@@ -46,12 +47,16 @@ with FaceDetector.create_from_options(options) as face_detection :
 
         img[y1:y1+h,x1:x1+w] = cv2.blur(img[y1:y1+h,x1:x1+w],(50,50))
 
+        img= cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
 
-        cv2.imshow("Image", cv2.cvtColor(img, cv2.COLOR_RGB2BGR))
+        cv2.imshow("Image", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
     
         # saving it 
+
+        if not os.path.exists("./output"):
+            os.makedirs("output")
 
         cv2.imwrite((Path("output")/"new_test3.jpeg"),img)
 
