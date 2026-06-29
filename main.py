@@ -1,20 +1,32 @@
-# pyrefly: ignore [missing-import]
-import cv2
+import os
 from pathlib import Path
 # pyrefly: ignore [missing-import]
+import cv2
+# pyrefly: ignore [missing-import]
 import mediapipe as mp
-import os 
+import argparse as ap
+from process_img import process_img
 
-# Reading the image
-img_path = Path("data") / "test3.jpeg"
-img = cv2.imread(str(img_path))
+
+# Paths
+
+img_path = str(Path("data") / "test3.jpeg")
+video_path = str(Path("data") / "us.MOV")
+
+# user choices
+
+args = ap.ArgumentParser()
+
+args.add_argument("--mode", default='video')
+args.add_argument("--filePath",default= video_path)
+
+args = args.parse_args()
 
 # detecting faces
 
 FaceDetector = mp.tasks.vision.FaceDetector
 FaceDetectorOptions = mp.tasks.vision.FaceDetectorOptions
 BaseOptions = mp.tasks.BaseOptions
-
 
 options = FaceDetectorOptions(
     base_options=BaseOptions(model_asset_path='blaze_face_short_range.tflite'),
@@ -23,51 +35,58 @@ options = FaceDetectorOptions(
 
 with FaceDetector.create_from_options(options) as face_detection :
     
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    if not os.path.exists("./output"):
+        os.makedirs("output")
+        
+    # Image
 
-    mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=img)
+    if args.mode == 'image':
+        img = cv2.imread(args.filePath)
 
-    out = face_detection.detect(mp_image)
-
-    print(" ======= DETECTIONS ======== ")
-    print (out.detections)
-
-    if out.detections:
-
-        for detection in out.detections:
-
-            bbox = detection.bounding_box
-
-            x1 , y1 , w , h = bbox.origin_x , int(bbox.origin_y * 0.8) , bbox.width , bbox.height + int(bbox.origin_y * 0.2)
-
-            cv2.rectangle(img , (x1, y1) , (x1+w , y1+h) , (0,255,0),2)
-     
-
-        # blurring the face 
-
-        img[y1:y1+h,x1:x1+w] = cv2.blur(img[y1:y1+h,x1:x1+w],(50,50))
-
-        img= cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+        img = process_img(img,face_detection)
 
         cv2.imshow("Image", img)
         cv2.waitKey(0)
         cv2.destroyAllWindows()
-    
-        # saving it 
 
-        if not os.path.exists("./output"):
-            os.makedirs("output")
+        # saving it 
 
         cv2.imwrite((Path("output")/"new_test3.jpeg"),img)
 
         print("---- Image Saved! -----")
-    else :
-        print("\n ====> No face detected \n")
 
 
+    # Video
 
-"""
-cv2.imshow("Image", img)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
-"""
+    elif args.mode == 'video':
+
+        cap = cv2.VideoCapture(args.filePath)
+        
+        ret , frame = cap.read()
+
+        fps = 25
+        fps = cap.get(cv2.CAP_PROP_FPS)
+
+
+        output_video = cv2.VideoWriter((Path("output")/"output.mp4"),
+                                        cv2.VideoWriter_fourcc(*'mp4v'),
+                                        fps,
+                                        (frame.shape[1], frame.shape[0])
+                                        )
+
+        while True:
+            frame = process_img(frame, face_detection)
+
+            output_video.write(frame)
+
+            ret , frame = cap.read()
+
+            if not ret or frame is None:
+                print("\n Video reached the end or frame could not be read. Exiting loop.\n")
+                break
+        
+        print("=======> fps :\n ",fps)
+        cap.release()
+        output_video.release()
+        cv2.destroyAllWindows()
+
