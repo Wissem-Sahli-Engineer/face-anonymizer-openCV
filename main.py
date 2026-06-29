@@ -17,7 +17,7 @@ video_path = str(Path("data") / "us.MOV")
 
 args = ap.ArgumentParser()
 
-args.add_argument("--mode", default='video')
+args.add_argument("--mode", default='webcam')
 args.add_argument("--filePath",default= video_path)
 
 args = args.parse_args()
@@ -88,5 +88,27 @@ with FaceDetector.create_from_options(options) as face_detection :
         print("=======> fps :\n ",fps)
         cap.release()
         output_video.release()
+        cv2.destroyAllWindows()
+
+    # Webcam
+
+    elif args.mode == 'webcam':
+
+        webcam = cv2.VideoCapture(0)
+        
+        ret , frame = webcam.read()
+
+        while ret:
+            
+            frame = process_img(frame, face_detection)
+
+            cv2.imshow('Live Face Anonymizer',frame)
+
+            if cv2.waitKey(30) & 0xFF == ord('q'):
+                break
+
+            ret , frame = webcam.read()
+
+        webcam.release()
         cv2.destroyAllWindows()
 
