@@ -102,6 +102,8 @@ with FaceDetector.create_from_options(options) as face_detection :
             
             frame = process_img(frame, face_detection)
 
+            frame = cv2.flip(frame, 1) 
+            
             cv2.imshow('Live Face Anonymizer',frame)
 
             if cv2.waitKey(30) & 0xFF == ord('q'):
